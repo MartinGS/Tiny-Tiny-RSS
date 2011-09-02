@@ -519,7 +519,7 @@
 				}
 
 			$result = db_query($link, "SELECT id,update_interval,auth_login,
-				auth_pass,cache_images,update_method
+				auth_pass,cache_images,update_method, xpath_content
 				FROM ttrss_feeds WHERE id = '$feed' AND $updstart_thresh_qpart");
 
 		} else {
@@ -527,7 +527,7 @@
 			$result = db_query($link, "SELECT id,update_interval,auth_login,
 				feed_url,auth_pass,cache_images,update_method,last_updated,
 				mark_unread_on_update, owner_uid, update_on_checksum_change,
-				pubsub_state
+				pubsub_state, xpath_content
 				FROM ttrss_feeds WHERE id = '$feed'");
 
 		}
@@ -547,6 +547,7 @@
 		$update_on_checksum_change = sql_bool_to_bool(db_fetch_result($result,
 			0, "update_on_checksum_change"));
 		$pubsub_state = db_fetch_result($result, 0, "pubsub_state");
+		$xpath_content = db_fetch_result($result, 0, "xpath_content");
 
 		db_query($link, "UPDATE ttrss_feeds SET last_update_started = NOW()
 			WHERE id = '$feed'");
@@ -1115,6 +1116,24 @@
 
 					// base post entry does not exist, create it
 
+					if ($xpath_content) {
+						$fetch_content = new DOMDocument();
+						$fetch_content->loadHTMLFile(htmlspecialchars_decode($entry_link));
+
+						$new_content = new DOMDocument();
+						$new_content->formatOutput = true;
+
+						$dom_xpath = new DOMXpath($fetch_content);
+						foreach($dom_xpath->query($xpath_content) as $dom_node) {
+							$new_node = $new_content->importNode($dom_node, true );
+							$new_content->appendChild($new_node);
+						}
+						$html = $new_content->saveHTML();
+
+						$entry_content = db_escape_string($html, false);
+						$entry_content = sanitize_article_content($entry_content);
+					}
+
 					$result = db_query($link,
 						"INSERT INTO ttrss_entries
 							(title,
@@ -1318,6 +1337,24 @@
 
 //						print "<!-- post $orig_title needs update : $post_needs_update -->";
 
+						if ($xpath_content) {
+							$fetch_content = new DOMDocument();
+							$fetch_content->loadHTMLFile(htmlspecialchars_decode($entry_link));
+
+							$new_content = new DOMDocument();
+							$new_content->formatOutput = true;
+
+							$dom_xpath = new DOMXpath($fetch_content);
+							foreach($dom_xpath->query($xpath_content) as $dom_node) {
+								$new_node = $new_content->importNode($dom_node, true );
+								$new_content->appendChild($new_node);
+							}
+							$html = $new_content->saveHTML();
+
+							$entry_content = db_escape_string($html, false);
+							$entry_content = sanitize_article_content($entry_content);
+						}
+						
 						db_query($link, "UPDATE ttrss_entries
 							SET title = '$entry_title', content = '$entry_content',
 								content_hash = '$content_hash',
