@@ -497,6 +497,20 @@ class Pref_Feeds extends Protected_Handler {
 
 		print "</div>";
 
+		print "<div class=\"dlgSec\">".__("XPath Content")."</div>";
+		print "<div class=\"dlgSecCont\">";
+
+		$xpath_content = htmlspecialchars(db_fetch_result($result, 0, "xpath_content"));
+
+		print "<input dojoType=\"dijit.form.TextBox\" id=\"feedEditDlg_xpathcontent\"
+			name=\"xpath_content\" value=\"$xpath_content\"><hr/>";
+
+		print "<div dojoType=\"dijit.Tooltip\" connectId=\"feedEditDlg_xpathcontent\" position=\"below\">
+			".__('<b>Hint:</b> you need to fill in the xpath of the content you want to extract from the link of each article. ex : //div[@class="list_item"] ')."
+			</div>";
+
+		print "</div>";
+
 		$title = htmlspecialchars($title, ENT_QUOTES);
 
 		print "<div class='dlgButtons'>
@@ -721,6 +735,8 @@ class Pref_Feeds extends Protected_Handler {
 		$update_on_checksum_change = checkbox_to_sql_bool(
 			db_escape_string($_POST["update_on_checksum_change"]));
 
+		$xpath_content = db_escape_string(trim($_POST["xpath_content"]));
+
 		if (get_pref($this->link, 'ENABLE_FEED_CATS')) {
 			if ($cat_id && $cat_id != 0) {
 				$category_qpart = "cat_id = '$cat_id',";
@@ -756,7 +772,8 @@ class Pref_Feeds extends Protected_Handler {
 				always_display_enclosures = $always_display_enclosures,
 				mark_unread_on_update = $mark_unread_on_update,
 				update_on_checksum_change = $update_on_checksum_change,
-				update_method = '$update_method'
+				update_method = '$update_method',
+				xpath_content = '$xpath_content'
 				WHERE id = '$feed_id' AND owner_uid = " . $_SESSION["uid"]);
 
 		} else {
